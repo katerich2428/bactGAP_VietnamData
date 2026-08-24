@@ -54,4 +54,4 @@ rule bakta:
         """
         mkdir -p data/annotations
         bakta --force --db data/bakta_db/db --prefix {wildcards.sample} --output data/annotations/{wildcards.sample} --genus {params.genus} --species {params.species} --strain {wildcards.sample} --locus-tag {wildcards.sample} --threads {threads} --skip-plot {input.fasta}
-        """
+       """
