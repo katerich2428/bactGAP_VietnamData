@@ -1,7 +1,23 @@
 samples: "config/samples.tsv"
-genus_species: "Genus species"
+genus_species: "Genus_species" # this should match AMRFinderPlus database if available
 genus: "Genus"
 species: "species"
+
+# quality control thresholds
+expected_genome_size: # add expected genome size here
+min_q30_coverage: 20
+min_tax_read_assignment: 95
+min_assembly_completeness: 96
+max_assembly_contamination: 3
+# define the following thresholds, QauliBact (https://qualibact.org/) can be used as a reference
+min_assembly_length: 
+max_assembly_length: 
+min_n50: 
+max_contigs: 
+min_cds: 
+max_cds: 
+
+
 
 # optional configuration if you want to perform reference guided assembly and treebuilding
 reference: "GCF_XXXXXXXXX.X"
