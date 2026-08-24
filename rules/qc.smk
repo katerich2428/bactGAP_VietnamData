@@ -23,18 +23,34 @@ rule filter_tophits:
         python3 scripts/filter_tophits.py {input} {output}
         """
 
-rule filter_minimum_contamination:
+rule summarize_fastp:
     input:
-        "data/qc/sylph_profiles_tophits.tsv"
-    params:
-        genus=config["genus"],
-        species=config["species"]
+        expand("data/qc/fastp/{sample}.json", sample=samples["sample"])
     output:
-        "data/qc/filtered_output.tsv"
+        "data/qc/fastp_summary.txt"
     shell:
         """
-        python3 scripts/filter_maximum_abundance.py {input} {output} --genus {params.genus} --species {params.species}
+        python scripts/summarize_fastp.py data/qc/fastp
         """
+
+checkpoint filter_read_qc_metrics:
+    input:
+        sylph="data/qc/sylph_profiles_tophits.tsv",
+        fastp="data/qc/fastp_summary.txt"
+    params:
+        genus=config["genus"],
+        species=config["species"],
+        min_coverage=config["min_q30_coverage"],
+        genome_size=config["expected_genome_size"],
+        min_abundance=config["min_tax_read_assignment"]
+    output:
+        combined_metrics="data/qc/read_metrics.tsv",
+        pass_samples="data/qc/read_metrics_pass_samples.txt"
+    shell:
+        """
+        python scripts/apply_read_qc_thresholds.py --genus {params.genus} --species {params.species} --genome_size {params.genome_size} --min_coverage {params.min_coverage} --min_abundance {params.min_abundance} {input.sylph} {input.fastp} {output.combined_metrics} {output.pass_samples}
+        """
+
 rule create_checkm2_input:
     input:
         "data/annotations/{sample}/{sample}.faa"
@@ -46,9 +62,12 @@ rule create_checkm2_input:
         ln -rs {input} {output}
         """
 
+def get_checkm2_input(wc):
+    return expand("data/qc/checkm2_input/{sample}.faa", sample=get_passed_reads(wc))
+
 rule checkm2:
     input:
-        proteins=expand(["data/qc/checkm2_input/{sample}.faa"], sample=samples["sample"]),
+        proteins=get_checkm2_input,
         db="data/CheckM2_database/uniref100.KO.1.dmnd"
     output:
         report="data/qc/checkm2/quality_report.tsv",
@@ -63,9 +82,12 @@ rule checkm2:
         checkm2 predict --force -t {threads} -x .faa --genes --output-directory data/qc/checkm2/ --input data/qc/checkm2_input/ --database_path {input.db}
         """
 
+def get_quast_input(wc):
+    return expand("data/filtered_assemblies/{sample}_contigs_filtered.fa", sample=get_passed_reads(wc))
+
 rule quast:
     input:
-        assemblies=expand(["data/filtered_assemblies/{sample}_contigs_filtered.fa"], sample=samples["sample"]),
+        assemblies=get_quast_input
     output:
         "data/qc/quast/transposed_report.tsv"
     threads: 16
