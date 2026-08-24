@@ -18,14 +18,20 @@ rule snippy:
         snippy --force --cpus {threads} --ram {params.ram} --mincov 20 --minfrac 0.9 --outdir data/snippy/{wildcards.sample} --ref {input.reference} --R1 {input.read1} --R2 {input.read2} 
         """
 
+def get_snippy_core_input(wc):
+    return expand("data/snippy/{sample}/snps.vcf", sample=get_passed_reads(wc))
+
 rule snippy_core:
     input:
         reference="data/reference/reference.fasta",
-        vcfs=expand("data/snippy/{sample}/snps.vcf", sample=samples["sample"])
+        vcfs=get_snippy_core_input
     output:
         "data/alignments/core.full.aln"
     conda:
         "../envs/snippy.yml"
+    resources:
+        mem_mb=lambda wildcards, attempt: attempt * 32000,
+        runtime=lambda wildcards, attempt: attempt * 30
     shell:
         """
         snippy-core --prefix data/alignments/core --ref {input.reference} data/snippy/*
