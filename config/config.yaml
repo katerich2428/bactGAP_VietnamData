@@ -1,7 +1,7 @@
 samples: "config/samples.tsv"
-genus_species: "Genus_species" # this should match AMRFinderPlus database if available
-genus: "Genus"
-species: "species"
+genus_species: "Neisseria gonorrhoeae" # this should match AMRFinderPlus database if available
+genus: "Neisseria"
+species: "gonorrhoeae"
 
 # quality control thresholds
 expected_genome_size: # add expected genome size here
